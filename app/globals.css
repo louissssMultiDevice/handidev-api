@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* custom vars for theme */
+:root{
+  --accent: #10b981;
+  --bg-dark: #0f1724;
+  --card-dark: #0b1220;
+  --muted-dark: #94a3b8;
+  --text-dark: #e6eef8;
+  --bg-light: #ffffff;
+  --card-light: #f6f8fb;
+  --muted-light: #475569;
+  --text-light: #0b1220;
+}
+
+/* default (dark) */
+html { background: radial-gradient(1200px 600px at 10% 10%, rgba(16,185,129,0.04), transparent), var(--bg-dark); color:var(--text-dark) }
+
+html.light {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* small helpers */
+.fade-in-up { opacity:0; transform: translateY(8px); animation: enter .7s cubic-bezier(.2,.9,.2,1) forwards }
+@keyframes enter { to { opacity:1; transform: none } }
