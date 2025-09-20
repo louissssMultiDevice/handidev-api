@@ -1,0 +1,339 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Handi Dev — Email Generator</title>
+  <meta name="description" content="Handi Dev | Email Generator & Tools — modern dashboard with smooth theme toggle, wave notification & fancy loader" />  <!-- Tailwind via CDN -->  <script src="https://cdn.tailwindcss.com"></script>  <style>
+    /* ---------- Custom Styles ---------- */
+    :root{
+      --bg: #0f1724; /* dark */
+      --card: #0b1220;
+      --text: #e6eef8;
+      --muted: #94a3b8;
+      --accent: #10b981; /* green */
+    }
+    [data-theme='light']{
+      --bg: #ffffff;
+      --card: #f6f8fb;
+      --text: #0b1220;
+      --muted: #475569;
+      --accent: #059669;
+    }
+
+    body{ background: radial-gradient(1200px 600px at 10% 10%, rgba(16,185,129,0.04), transparent), var(--bg); color:var(--text); transition: background 600ms ease, color 400ms ease; }
+
+    /* Theme toggle - fancy */
+    .theme-toggle{ width:84px; height:44px; background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.06)); border-radius:999px; position:relative; display:inline-flex; align-items:center; padding:6px; cursor:pointer; box-shadow: 0 6px 18px rgba(2,6,23,0.6); }
+    .theme-track{ flex:1; height:32px; border-radius:999px; position:relative; overflow:hidden; }
+    .knob{ width:40px; height:40px; border-radius:50%; background:linear-gradient(180deg, #fff, #eee); box-shadow:0 6px 18px rgba(2,6,23,0.45); position:absolute; top:2px; left:2px; transition: transform 550ms cubic-bezier(.2,.9,.2,1), background 400ms; display:flex; align-items:center; justify-content:center; }
+    [data-theme='dark'] .knob{ background: linear-gradient(180deg,#0f1724,#0b1220); color:var(--accent); }
+    .knob svg{ width:18px; height:18px; opacity:0.95 }
+    .knob.move-right{ transform: translateX(40px) }
+
+    /* Wave notification */
+    .notif-wrap{ position:fixed; left:50%; transform:translateX(-50%); top:18px; width:min(880px,92%); z-index:60; pointer-events:none }
+    .notif{ pointer-events:auto; margin:0 auto; background:linear-gradient(180deg, rgba(2,6,23,0.9), rgba(2,6,23,0.85)); border-radius:12px; padding:14px 18px; box-shadow:0 10px 30px rgba(2,6,23,0.6); overflow:hidden; display:flex; gap:12px; align-items:center; width:100%; }
+    [data-theme='light'] .notif{ background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.95)); color:var(--text) }
+
+    /* wave entrance */
+    .notif-clip{ position:absolute; inset:0; background:linear-gradient(90deg, rgba(16,185,129,0.06), transparent); transform-origin:left; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); animation: waveIn 700ms cubic-bezier(.2,.9,.2,1); }
+    @keyframes waveIn{ 0%{ transform:translateX(-100%) scaleX(0.6) } 60%{ transform:translateX(12%) scaleX(1.02) } 100%{ transform:translateX(0) scaleX(1) } }
+
+    /* green progress bar */
+    .progress{ height:4px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; width:100%; margin-top:8px }
+    .progress-bar{ height:100%; width:100%; background:linear-gradient(90deg,var(--accent), #34d399); transform-origin:left; animation: shrink var(--duration) linear forwards }
+
+    /* loader overlay */
+    .loader-overlay{ position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+    .loader-card{ width:220px; height:220px; border-radius:24px; display:flex; align-items:center; justify-content:center; position:relative; box-shadow: 0 20px 60px rgba(2,6,23,0.6); overflow:visible }
+    .orbit{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center }
+    .ring{ position:absolute; border-radius:999px; border:6px solid rgba(255,255,255,0.03); animation: spin 2.8s linear infinite }
+    .ring.inner{ width:140px; height:140px; border-color: rgba(16,185,129,0.12) }
+    .ring.mid{ width:170px; height:170px; border-color: rgba(255,255,255,0.04); animation-duration:3.6s }
+    .ring.outer{ width:200px; height:200px; border-color: rgba(16,185,129,0.06); animation-duration:4.6s }
+    @keyframes spin{ to{ transform: rotate(360deg) } }
+
+    .dot{ width:18px; height:18px; border-radius:50%; background:var(--accent); box-shadow:0 8px 30px rgba(16,185,129,0.18); transform-origin:110px; animation: orbit 2.8s linear infinite }
+    @keyframes orbit{ to{ transform: rotate(360deg) translateX(110px) rotate(-360deg) } }
+
+    /* subtle entrance */
+    .fade-in-up{ opacity:0; transform:translateY(8px); animation: enter 700ms cubic-bezier(.2,.9,.2,1) forwards }
+    @keyframes enter{ to{ opacity:1; transform:none } }
+
+    /* responsive tweaks */
+    @media (max-width:640px){ .theme-toggle{ width:72px; height:40px } .knob.move-right{ transform:translateX(34px) } }
+  </style></head>
+<body data-theme="dark" class="antialiased min-h-screen">  <!-- Loader (first visit) -->  <div id="loader" class="loader-overlay">
+    <div class="loader-card">
+      <div class="orbit">
+        <div class="ring outer"></div>
+        <div class="ring mid"></div>
+        <div class="ring inner"></div>
+        <div class="dot"></div>
+      </div>
+      <div style="position:relative; z-index:10; text-align:center">
+        <div style="font-weight:700; letter-spacing:0.6px;">HANDI DEV</div>
+        <div style="font-size:12px; margin-top:6px; color:var(--muted)">initializing tools…</div>
+      </div>
+    </div>
+  </div>  <!-- Notification container -->  <div class="notif-wrap" id="notifWrap" aria-live="polite"></div>  <!-- Main UI -->  <main class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8"><!-- Left: card + theme -->
+  <section class="lg:col-span-1 space-y-6 fade-in-up">
+    <div class="bg-[color:var(--card)] rounded-2xl p-6 border border-gray-800 shadow-sm">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <div class="text-sm text-[color:var(--muted)]">Dashboard</div>
+          <div class="text-xl font-bold">Handi Dev Tools</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="text-xs text-[color:var(--muted)] text-right">Tema</div>
+
+          <div id="themeToggle" class="theme-toggle" role="button" aria-label="Toggle theme">
+            <div class="theme-track" aria-hidden>
+              <div id="knob" class="knob" title="Toggle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 text-sm text-[color:var(--muted)]">Tools aktif:</div>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li>• Email Generator (Emailnator)</li>
+        <li>• Auto-verification watcher</li>
+        <li>• Integrasi API untuk bot / web</li>
+      </ul>
+    </div>
+
+    <div class="bg-[color:var(--card)] rounded-2xl p-6 border border-gray-800 shadow-sm">
+      <div class="text-sm text-[color:var(--muted)]">Quick Actions</div>
+      <div class="mt-4 flex gap-3">
+        <button id="btnGen" class="px-4 py-2 rounded-xl bg-[color:var(--accent)] text-black font-semibold shadow hover:scale-105 transition-transform">Buat Gmail</button>
+        <button id="btnCopy" class="px-4 py-2 rounded-xl border border-gray-700 text-sm">Copy Email</button>
+      </div>
+
+      <div class="mt-4 text-sm text-[color:var(--muted)]">Status:</div>
+      <div id="status" class="mt-2 text-sm">Belum membuat email</div>
+    </div>
+  </section>
+
+  <!-- Center: main generator -->
+  <section class="lg:col-span-2 space-y-6 fade-in-up">
+    <div class="bg-[color:var(--card)] rounded-2xl p-6 border border-gray-800 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-[color:var(--muted)]">Email Generator</div>
+          <div class="text-2xl font-bold">Temporary Gmail</div>
+        </div>
+        <div class="text-sm text-[color:var(--muted)]">API: <span id="apiUrl">/api/gmail</span></div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-[color:var(--bg)]/30">
+          <div class="text-sm text-[color:var(--muted)]">Gmail</div>
+          <div id="gmailBox" class="mt-2 font-mono text-lg break-words">-</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-[color:var(--bg)]/30">
+          <div class="text-sm text-[color:var(--muted)]">Link Verifikasi</div>
+          <div id="linkBox" class="mt-2 break-words"><span class="text-[color:var(--muted)]">Belum ada</span></div>
+        </div>
+      </div>
+
+      <div class="mt-6 text-sm text-[color:var(--muted)]">Opsi:</div>
+      <div class="mt-3 flex gap-3">
+        <button id="watchBtn" class="px-4 py-2 rounded-xl border border-[color:var(--accent)] text-[color:var(--accent)]">Pantau hingga ketemu</button>
+        <button id="openLinkBtn" class="px-4 py-2 rounded-xl bg-gray-700 disabled:opacity-50">Buka Link</button>
+      </div>
+    </div>
+
+    <div class="bg-[color:var(--card)] rounded-2xl p-6 border border-gray-800 shadow-sm">
+      <div class="text-sm text-[color:var(--muted)]">Log Aktivitas</div>
+      <div id="log" class="mt-3 text-sm h-48 overflow-auto bg-[color:var(--bg)]/20 p-3 rounded-md"></div>
+    </div>
+  </section>
+
+</div>
+
+  </main>  <script>
+    // ---------- Config ----------
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : location.origin
+
+    // ---------- Elements ----------
+    const loader = document.getElementById('loader')
+    const notifWrap = document.getElementById('notifWrap')
+    const themeToggle = document.getElementById('themeToggle')
+    const knob = document.getElementById('knob')
+    const btnGen = document.getElementById('btnGen')
+    const btnCopy = document.getElementById('btnCopy')
+    const watchBtn = document.getElementById('watchBtn')
+    const openLinkBtn = document.getElementById('openLinkBtn')
+    const gmailBox = document.getElementById('gmailBox')
+    const linkBox = document.getElementById('linkBox')
+    const status = document.getElementById('status')
+    const logEl = document.getElementById('log')
+
+    // ---------- Utilities ----------
+    function log(text){
+      const time = new Date().toLocaleTimeString()
+      logEl.innerHTML = `<div class=\"text-xs text-[color:var(--muted)]\">[${time}]</div><div>${text}</div>` + logEl.innerHTML
+    }
+
+    function showNotif(message, duration=4000){
+      // build notif
+      const wrap = document.createElement('div')
+      wrap.className = 'notif fade-in-up'
+      wrap.style.opacity = '0'
+
+      // clip/wave layer
+      const clip = document.createElement('div')
+      clip.className = 'notif-clip'
+      wrap.appendChild(clip)
+
+      const inner = document.createElement('div')
+      inner.style.position = 'relative'
+      inner.style.zIndex = '12'
+      inner.innerHTML = `<div style=\"display:flex;align-items:center;gap:12px;\">\n        <div style=\"width:40px;height:40px;border-radius:10px;background:linear-gradient(180deg,var(--accent),#34d399);display:flex;align-items:center;justify-content:center;color:#022; font-weight:700;\">OK</div>\n        <div>\n          <div style=\\"font-weight:700\\">${message}</div>\n          <div style=\\"font-size:12px;color:var(--muted);margin-top:4px\\">Notifikasi otomatis</div>\n        </div>\n      </div>`
+
+      wrap.appendChild(inner)
+
+      const progressWrap = document.createElement('div')
+      progressWrap.className = 'progress'
+      const progressBar = document.createElement('div')
+      progressBar.className = 'progress-bar'
+      progressBar.style.setProperty('--duration', duration + 'ms')
+      progressWrap.appendChild(progressBar)
+      wrap.appendChild(progressWrap)
+
+      notifWrap.appendChild(wrap)
+
+      // entrance
+      requestAnimationFrame(()=>{ wrap.style.opacity = '1' })
+
+      // remove after duration
+      setTimeout(()=>{
+        wrap.style.transition = 'transform 400ms ease, opacity 400ms ease'
+        wrap.style.transform = 'translateY(-12px)'
+        wrap.style.opacity = '0'
+        setTimeout(()=>{ wrap.remove() }, 420)
+      }, duration)
+
+      return wrap
+    }
+
+    // ---------- Theme handling ----------
+    function applyTheme(name){
+      document.documentElement.setAttribute('data-theme', name)
+      if (name === 'light') knob.classList.add('move-right')
+      else knob.classList.remove('move-right')
+      localStorage.setItem('hd_theme', name)
+    }
+
+    // init theme
+    const saved = localStorage.getItem('hd_theme') || 'dark'
+    applyTheme(saved)
+
+    // toggle click animation + notif wave
+    themeToggle.addEventListener('click', ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark'
+      const next = current === 'dark' ? 'light' : 'dark'
+      applyTheme(next)
+
+      // show fancy notification
+      showNotif('Tema diganti ke '+next.toUpperCase(), 4200)
+    })
+
+    // ---------- Loader logic (show once per session) ----------
+    const LOADER_KEY = 'hd_first_load_v1'
+    if (!sessionStorage.getItem(LOADER_KEY)){
+      // show loader for ~2.2s then hide
+      setTimeout(()=>{
+        loader.style.transition = 'opacity 600ms ease, transform 600ms ease'
+        loader.style.opacity = '0'
+        loader.style.transform = 'scale(0.98)'
+        setTimeout(()=> loader.remove(), 700)
+      }, 2200)
+      sessionStorage.setItem(LOADER_KEY, '1')
+    } else {
+      loader.remove()
+    }
+
+    // ---------- Email functions (calls backend) ----------
+    let currentGmail = null
+    let currentLink = null
+
+    async function createGmail(){
+      try{
+        status.innerText = 'Membuat Gmail...'
+        log('memanggil API /api/gmail')
+        const res = await fetch(API_BASE + '/api/gmail')
+        const data = await res.json()
+        if (data?.gmail){
+          currentGmail = data.gmail
+          gmailBox.innerText = currentGmail
+          linkBox.innerHTML = '<span class="text-[color:var(--muted)]">Menunggu verifikasi...</span>'
+          status.innerText = 'Gmail berhasil dibuat'
+          showNotif('Gmail dibuat: '+currentGmail, 3500)
+          log('gmail dibuat: '+currentGmail)
+        } else {
+          status.innerText = 'Gagal membuat gmail'
+          showNotif('Gagal membuat gmail', 3500)
+          log('gagal: ' + JSON.stringify(data))
+        }
+      }catch(err){
+        status.innerText = 'Error: tidak dapat terhubung ke server'
+        showNotif('Error: tidak dapat terhubung ke server', 4000)
+        log('error: ' + err.message)
+      }
+    }
+
+    async function checkVerification(auto=false){
+      if (!currentGmail){ showNotif('Belum ada gmail dibuat', 2500); return }
+      status.innerText = 'Mengecek inbox...'
+      log('cek verification untuk '+currentGmail)
+      for (let i=0;i<15;i++){
+        try{
+          const res = await fetch(API_BASE + '/api/verification?gmail=' + encodeURIComponent(currentGmail))
+          const data = await res.json()
+          if (data?.link){
+            currentLink = data.link
+            linkBox.innerHTML = `<a href=\"${currentLink}\" target=\"_blank\" class=\"underline\">${currentLink}</a>`
+            status.innerText = 'Link verifikasi ditemukan'
+            showNotif('Link verifikasi ditemukan', 3800)
+            log('link ditemukan: '+currentLink)
+            openLinkBtn.disabled = false
+            return
+          }
+        }catch(e){
+          log('error cek: '+ e.message)
+        }
+        // small delay
+        await new Promise(r=>setTimeout(r, 2000))
+      }
+      status.innerText = 'Link verifikasi tidak ditemukan'
+      showNotif('Link verifikasi belum ditemukan', 3800)
+    }
+
+    // ---------- Events ----------
+    btnGen.addEventListener('click', createGmail)
+    btnCopy.addEventListener('click', ()=>{
+      if (!currentGmail) return showNotif('Belum ada email untuk dicopy', 2000)
+      navigator.clipboard.writeText(currentGmail).then(()=> showNotif('Email disalin ke clipboard', 2000))
+    })
+    watchBtn.addEventListener('click', ()=> checkVerification(true))
+    openLinkBtn.addEventListener('click', ()=>{
+      if (currentLink) window.open(currentLink, '_blank')
+    })
+
+    // accessibility: press G to generate
+    window.addEventListener('keydown', e=>{
+      if (e.key.toLowerCase() === 'g') createGmail()
+      if (e.key.toLowerCase() === 't') themeToggle.click()
+    })
+
+    // indicate API in UI
+    document.getElementById('apiUrl').innerText = API_BASE + '/api/gmail'
+
+  </script></body>
+</html>
